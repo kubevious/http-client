@@ -1,11 +1,14 @@
 import _ from 'the-lodash';
-import { Promise } from 'the-promise';
+import { Promise, RetryOptions, BlockingResolver } from 'the-promise';
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { IRemoteTracker, RemoteTrackOperation } from './remote-tracker';
-import { BlockingResolver } from './blocking-resolver';
-
 
 export type AuthorizerCb = () => string;
+
+export interface HttpClientOptions
+{
+    retry: RetryOptions
+}
 
 export class HttpClient
 {
@@ -17,7 +20,11 @@ export class HttpClient
     constructor(urlBase: string, remoteTracker?: IRemoteTracker, headers?: Record<string, string>) {
         this._urlBase = urlBase;
         this._remoteTracker = remoteTracker;
-        this._headers = headers || {};
+        if (headers) {
+            this._headers = _.clone(headers);
+        } else {
+            this._headers = {};
+        }
     }
 
     header(name: string, value: string)
@@ -86,7 +93,6 @@ export class HttpClient
         } else {
             headers = {};
         }
-        this._headers = headers;
 
         if (params) {
             config.params = params;
