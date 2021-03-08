@@ -17,13 +17,15 @@
   "author": "Ruben Hakopian <ruben.hakopian@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@types/uuid": "^8.3.0",
     "axios": "^0.21.1",
     "the-lodash": "^2.0.0",
     "the-promise": "^2.0.4",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "express": "^4.17.1",
+    "@types/express": "^4.17.8",
+    "@types/uuid": "^8.3.0",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.6.0",
     "@types/react": "^17.0.1",
