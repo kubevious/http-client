@@ -19,7 +19,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "the-lodash": "^2.0.0",
-    "the-promise": "^2.0.4",
+    "the-promise": "^2.0.10",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

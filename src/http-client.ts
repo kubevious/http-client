@@ -4,10 +4,11 @@ import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
 
-export type AuthorizerCb = () => string;
+export type AuthorizerCb = () => Resolvable<string>;
 
 export interface HttpClientOptions
 {
+    timeout?: number,
     retry?: HttpClientRetryOptions;
     headers?: Record<string, string>;
     tracker?: Partial<ITracker>;
@@ -69,6 +70,7 @@ export class HttpClient
         const scopeUrl = parts.join('/');
 
         const scopeOptions : HttpClientOptions = {
+            timeout: this._options.timeout,
             retry: this._retry,
             headers: this._headers,
             tracker: this._tracker,
@@ -176,6 +178,10 @@ export class HttpClient
 
         if (requestInfo.data) {
             config.data = requestInfo.data;
+        }
+
+        if (_.isNotNullOrUndefined(this._options.timeout)) {
+            config.timeout = this._options.timeout!;
         }
 
         if (this._tracker.tryAttempt) {
