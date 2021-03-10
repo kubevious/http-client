@@ -165,13 +165,6 @@ export class HttpClient
             headers: requestInfo.headers,
         };
 
-        let headers : Record<string, string>;
-        if (this._headers) {
-            headers = _.clone(this._headers);
-        } else {
-            headers = {};
-        }
-
         if (requestInfo.params) {
             config.params = requestInfo.params;
         }
@@ -189,7 +182,7 @@ export class HttpClient
         }
 
         return Promise.resolve()
-            .then(() => this._prepareHeaders(headers))
+            .then(() => this._prepareHeaders(config.headers))
             .then(() => axios(config))
             .then((result: AxiosResponse<T>) => {
 
