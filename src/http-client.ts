@@ -177,13 +177,13 @@ export class HttpClient
             config.timeout = this._options.timeout!;
         }
 
-        if (this._tracker.tryAttempt) {
-            this._tracker.tryAttempt(requestInfo);
-        }
-
-        return Promise.resolve()
-            .then(() => this._prepareHeaders(config.headers))
-            .then(() => axios(config))
+        return this._prepareHeaders(config.headers)
+            .then(() => {
+                if (this._tracker.tryAttempt) {
+                    this._tracker.tryAttempt(requestInfo);
+                }
+                return axios(config);
+            })
             .then((result: AxiosResponse<T>) => {
 
                 if (this._tracker.finish) {
@@ -214,7 +214,7 @@ export class HttpClient
             });
     }
 
-    private _prepareHeaders(headers : Record<string, string>)
+    private _prepareHeaders(headers : Record<string, string>) : Promise<void>
     {
         if (this._authorizerResolver) {
             return this._authorizerResolver.resolve()
@@ -224,6 +224,7 @@ export class HttpClient
                     }
                 });
         }
+        return Promise.resolve();
     }
 }
 
