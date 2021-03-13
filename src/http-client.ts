@@ -12,6 +12,7 @@ export interface HttpClientOptions
     retry?: HttpClientRetryOptions;
     headers?: Record<string, string>;
     tracker?: Partial<ITracker>;
+    absorbFailures?: boolean;
 
     authorizerCb?: AuthorizerCb;
     authorizerResolverCb?: BlockingResolver<string>;
@@ -141,14 +142,23 @@ export class HttpClient
             this._tracker.start(requestInfo);
         }
 
-        return Promise.retry<ClientResponse<T>>(() => {
-            return this._executeSingle(requestInfo);
-        }, options)
-        .catch(reason => {
-            if (this._tracker.fail) {
-                this._tracker.fail(requestInfo, reason);
-            }
-            throw reason;
+        return Promise.construct((resolve, reject) => {
+            Promise.retry<ClientResponse<T>>(() => {
+                return this._executeSingle(requestInfo);
+            }, options)
+            .then(result => {
+                resolve(result);
+                return null;
+            })
+            .catch(reason => {
+                if (this._tracker.fail) {
+                    this._tracker.fail(requestInfo, reason);
+                }
+                if (!this._options.absorbFailures) {
+                    reject(reason);
+                }
+                return null;
+            })
         })
     }
 

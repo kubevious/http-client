@@ -130,6 +130,42 @@ describe('backend-client', () => {
             });
     })
 
+
+    it('failure-absorb', () => {
+        const tracker = new Tracker();
+        let client = new HttpClient(`http://localhost:111`, {
+            tracker: tracker,
+            absorbFailures: true,
+            retry: {
+                initRetryDelay: 100,
+                maxRetryDelay: 200
+            }
+        });
+        let wasPassed = false;
+        let wasFailed = false;
+
+        client.get('/')
+            .then(result => {
+                wasPassed = true;
+                return null; 
+            })
+            .catch(reason => {
+                wasFailed = true;
+                return null; 
+            });
+
+        return Promise.timeout(3 * 1000)
+            .then(() => {
+                should(wasFailed).be.false();
+                should(wasPassed).be.false();
+                should(tracker.failCount).be.equal(1);
+            })
+
+
+        return 
+    })
+    .timeout(30 * 1000);
+
 });
 
 class Tracker implements ITracker
