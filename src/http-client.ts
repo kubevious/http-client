@@ -74,6 +74,7 @@ export class HttpClient
             timeout: this._options.timeout,
             retry: this._retry,
             headers: this._headers,
+            absorbFailures: this._options.absorbFailures,
             tracker: this._tracker,
             authorizerResolverCb: this._authorizerResolver
         }
