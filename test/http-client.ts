@@ -6,6 +6,7 @@ import { Promise } from 'the-promise';
 
 import { HttpClient, ITracker, RequestInfo } from '../src';
 import { AxiosResponse } from 'axios';
+import { HttpMethod } from '../src/types';
 
 const PORT = process.env.PORT || 3334;
 let globalApp = express();
@@ -64,6 +65,15 @@ describe('backend-client', () => {
     it('get-query', () => {
         let client = new HttpClient(`http://localhost:${PORT}`);
         return client.get('/')
+            .then(result => {
+                should(result.data).be.equal('hello');
+            })
+    })
+
+
+    it('get-query-execute', () => {
+        let client = new HttpClient(`http://localhost:${PORT}`);
+        return client.execute(HttpMethod.GET, '/')
             .then(result => {
                 should(result.data).be.equal('hello');
             })

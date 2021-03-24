@@ -3,6 +3,7 @@ import { Promise, RetryOptions, BlockingResolver, Resolvable } from 'the-promise
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
+import { HttpMethod } from './types'
 
 export type AuthorizerCb = () => Resolvable<string>;
 
@@ -30,14 +31,14 @@ export interface HttpClientRetryOptions
 
 export class HttpClient
 {
-    private _urlBase: string;
+    private _urlBase: string | undefined;
     private _options: HttpClientOptions;
     private _retry: HttpClientRetryOptions;
     private _tracker: Partial<ITracker>;
     private _headers: Record<string, string>;
     private _authorizerResolver: BlockingResolver<string> | undefined = undefined;
 
-    constructor(urlBase: string, options?: Partial<HttpClientOptions>) {
+    constructor(urlBase?: string, options?: Partial<HttpClientOptions>) {
         this._urlBase = urlBase;
         this._options = options || {};        
         this._retry = this._options.retry || {};
@@ -89,27 +90,27 @@ export class HttpClient
     }
 
     get<T>(url: string, params?: Record<string, string> | unknown) {
-        return this._execute<T>('get', url, params, null);
+        return this.execute<T>(HttpMethod.GET, url, params, null);
     }
 
     delete<T>(url: string, params?: Record<string, string> | unknown) {
-        return this._execute<T>('delete', url, params, null);
+        return this.execute<T>(HttpMethod.DELETE, url, params, null);
     }
 
     post<T>(url: string, data: Record<string, any>, params?: Record<string, string>) {
-        return this._execute<T>('post', url, params, data);
+        return this.execute<T>(HttpMethod.POST, url, params, data);
     }
 
     put<T>(url: string, data: Record<string, any>, params: Record<string, string>) {
-        return this._execute<T>('put', url, params, data);
+        return this.execute<T>(HttpMethod.PUT, url, params, data);
     }
 
     options<T>(url: string, data: Record<string, any>, params: Record<string, string>) {
-        return this._execute<T>('options', url, params, data);
+        return this.execute<T>(HttpMethod.OPTIONS, url, params, data);
     }
 
-    private _execute<T>(
-        method: AxiosRequestConfig['method'],
+    execute<T>(
+        method: HttpMethod,
         url: string,
         params?: Record<string, string> | unknown,
         data?: Record<string, any> | null,
