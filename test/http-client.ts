@@ -26,6 +26,12 @@ globalApp.get("/foo/bar", (req, res) => {
 });
 
 
+globalApp.post("/data", (req, res) => {
+    res.send('data1');
+});
+
+
+
 describe('backend-client', () => {
 
     beforeEach(() => {
@@ -67,6 +73,26 @@ describe('backend-client', () => {
         return client.get('/')
             .then(result => {
                 should(result.data).be.equal('hello');
+            })
+    })
+
+    it('post-no-data', () => {
+        let client = new HttpClient(`http://localhost:${PORT}`);
+        return client.post('/data')
+            .then(result => {
+                should(result.data).be.equal('data1');
+            })
+    })
+
+    it('post-with-data', () => {
+        let client = new HttpClient(`http://localhost:${PORT}`);
+        const contact : Contact = {
+            name: 'John',
+            phone: '1234'
+        }
+        return client.post('/data', contact)
+            .then(result => {
+                should(result.data).be.equal('data1');
             })
     })
 
@@ -215,4 +241,10 @@ class Tracker implements ITracker
         console.warn('[TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ', status:', status);
         this.failedAttemptCount++;
     }
+}
+
+interface Contact
+{
+    name: string,
+    phone: string
 }

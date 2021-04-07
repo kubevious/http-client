@@ -89,32 +89,42 @@ export class HttpClient
         return this;
     }
 
-    get<T>(url: string, params?: Record<string, string> | unknown) {
-        return this.execute<T>(HttpMethod.GET, url, params, null);
+    get<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, params?: TParams)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.GET, url, params, null);
     }
 
-    delete<T>(url: string, params?: Record<string, string> | unknown) {
-        return this.execute<T>(HttpMethod.DELETE, url, params, null);
+    delete<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, params?: TParams)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.DELETE, url, params, null);
     }
 
-    post<T>(url: string, data: Record<string, any>, params?: Record<string, string>) {
-        return this.execute<T>(HttpMethod.POST, url, params, data);
+    post<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, data?: TBody, params?: TParams)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.POST, url, params, data);
     }
 
-    put<T>(url: string, data: Record<string, any>, params: Record<string, string>) {
-        return this.execute<T>(HttpMethod.PUT, url, params, data);
+    put<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, data: TBody, params?: TParams)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.PUT, url, params, data);
     }
 
-    options<T>(url: string, data: Record<string, any>, params: Record<string, string>) {
-        return this.execute<T>(HttpMethod.OPTIONS, url, params, data);
+    options<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, data: TBody, params?: TParams)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.OPTIONS, url, params, data);
     }
 
-    execute<T>(
+    execute<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>(
         method: HttpMethod,
         url: string,
-        params?: Record<string, string> | unknown,
-        data?: Record<string, any> | null,
-        ) : Promise<ClientResponse<T>>
+        params?: TParams,
+        data?: TBody | null,
+        ) : Promise<ClientResponse<TResponse>>
     {
         const requestInfo : RequestInfo = {
             id: uuidv4(),
@@ -145,7 +155,7 @@ export class HttpClient
         }
 
         return Promise.construct((resolve, reject) => {
-            Promise.retry<ClientResponse<T>>(() => {
+            Promise.retry<ClientResponse<TResponse>>(() => {
                 return this._executeSingle(requestInfo);
             }, options)
             .then(result => {
