@@ -10,6 +10,7 @@ import { HttpMethod } from '../src/types';
 
 const PORT = process.env.PORT || 3334;
 let globalApp = express();
+globalApp.use(express.json({ limit: '10mb' }));
 
 let globalHttp : Server | null;
 
@@ -27,9 +28,12 @@ globalApp.get("/foo/bar", (req, res) => {
 
 
 globalApp.post("/data", (req, res) => {
-    res.send('data1');
+    let value = 'none';
+    if (req.body && req.body.name) {
+        value = 'data: ' + req.body.name;
+    }
+    res.send(value);
 });
-
 
 
 describe('backend-client', () => {
@@ -80,7 +84,7 @@ describe('backend-client', () => {
         let client = new HttpClient(`http://localhost:${PORT}`);
         return client.post('/data')
             .then(result => {
-                should(result.data).be.equal('data1');
+                should(result.data).be.equal('none');
             })
     })
 
@@ -90,9 +94,9 @@ describe('backend-client', () => {
             name: 'John',
             phone: '1234'
         }
-        return client.post('/data', contact)
+        return client.post('/data', {}, contact)
             .then(result => {
-                should(result.data).be.equal('data1');
+                should(result.data).be.equal('data: John');
             })
     })
 

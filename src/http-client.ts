@@ -48,6 +48,8 @@ export class HttpClient
         } else {
             this._headers = {};
         }
+        this._headers["Content-Type"] = "application/json";
+
         if (this._options.authorizerResolverCb) {
             this._authorizerResolver = this._options.authorizerResolverCb;
         } else {
@@ -102,19 +104,19 @@ export class HttpClient
     }
 
     post<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
-    (url: string, data?: TBody, params?: TParams)
+    (url: string, params?: TParams, data?: TBody)
     {
         return this.execute<TResponse, TParams, TBody>(HttpMethod.POST, url, params, data);
     }
 
     put<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
-    (url: string, data: TBody, params?: TParams)
+    (url: string, params?: TParams, data?: TBody)
     {
         return this.execute<TResponse, TParams, TBody>(HttpMethod.PUT, url, params, data);
     }
 
     options<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
-    (url: string, data: TBody, params?: TParams)
+    (url: string, params?: TParams, data?: TBody)
     {
         return this.execute<TResponse, TParams, TBody>(HttpMethod.OPTIONS, url, params, data);
     }
@@ -204,6 +206,8 @@ export class HttpClient
                 if (this._tracker.tryAttempt) {
                     this._tracker.tryAttempt(requestInfo);
                 }
+
+                console.log("ZZZ", config);
                 return axios(config);
             })
             .then((result: AxiosResponse<T>) => {
