@@ -206,8 +206,6 @@ export class HttpClient
                 if (this._tracker.tryAttempt) {
                     this._tracker.tryAttempt(requestInfo);
                 }
-
-                console.log("ZZZ", config);
                 return axios(config);
             })
             .then((result: AxiosResponse<T>) => {
