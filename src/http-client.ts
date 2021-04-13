@@ -3,7 +3,7 @@ import { Promise, RetryOptions, BlockingResolver, Resolvable } from 'the-promise
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
-import { HttpMethod } from './types'
+import { IHttpClient, RequestInfo, ClientResponse, HttpMethod } from './types'
 
 export type AuthorizerCb = () => Resolvable<string>;
 
@@ -29,7 +29,7 @@ export interface HttpClientRetryOptions
     canContinueCb?: (reason: any, requestInfo : RequestInfo) => Resolvable<boolean>;
 }
 
-export class HttpClient
+export class HttpClient implements IHttpClient
 {
     private _urlBase: string | undefined;
     private _options: HttpClientOptions;
@@ -250,21 +250,4 @@ export class HttpClient
         }
         return Promise.resolve();
     }
-}
-
-export interface ClientResponse<T>
-{
-    data: T;
-    status: number;
-    statusText: string;
-}
-
-export interface RequestInfo
-{
-    id: string,
-    method: AxiosRequestConfig['method'],
-    url: string,
-    params?: Record<string, string> | unknown,
-    data?: Record<string, any> | null,
-    headers : Record<string, string>
 }
