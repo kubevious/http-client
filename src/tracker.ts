@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { RequestInfo } from './http-client';
+import { RequestInfo } from './types';
 export interface ITracker
 {
     start(requestInfo : RequestInfo) : void;
