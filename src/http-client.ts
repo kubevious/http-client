@@ -128,10 +128,15 @@ export class HttpClient implements IHttpClient
         data?: TBody | null,
         ) : Promise<ClientResponse<TResponse>>
     {
+        let finalUrl = url;
+        if (this._urlBase) {
+            finalUrl = this._urlBase + finalUrl;
+        }
+
         const requestInfo : RequestInfo = {
             id: uuidv4(),
             method: method,
-            url: url,
+            url: finalUrl,
             params: params,
             data: data,
             headers: this._headers ? _.clone(this._headers) : {}
@@ -169,7 +174,7 @@ export class HttpClient implements IHttpClient
                     this._tracker.fail(requestInfo, reason);
                 }
                 if (!this._options.absorbFailures) {
-                    const myError = this._makeError(reason);
+                    const myError = this._makeError(requestInfo, reason);
                     reject(myError);
                 }
                 return null;
@@ -177,17 +182,20 @@ export class HttpClient implements IHttpClient
         })
     }
 
-    private _makeError(reason: any) : HttpClientError
+    private _makeError(requestInfo : RequestInfo, reason: any) : HttpClientError
     {
         const axiosError = <AxiosError>reason;
-
+        
         const myError : HttpClientError = {
             name: 'HttpClientError',
             message: axiosError?.message,
             stack: reason?.stack,
 
-            httpStatusCode: axiosError.response?.status,
-            httpStatusText: axiosError.response?.statusText
+            httpUrl: requestInfo.url,
+            httpMethod: requestInfo.method!,
+            httpParams: (requestInfo.params as Record<string, string>) ?? {},
+            httpStatusCode: axiosError?.response?.status,
+            httpStatusText: axiosError?.response?.statusText
         }
 
         return myError;
@@ -195,14 +203,9 @@ export class HttpClient implements IHttpClient
 
     private _executeSingle<T>(requestInfo : RequestInfo)
     {
-        let url = requestInfo.url;
-        if (this._urlBase) {
-            url = this._urlBase + url;
-        }
-
         const config: AxiosRequestConfig = {
             method: requestInfo.method,
-            url: url
+            url: requestInfo.url
         };
 
         if (requestInfo.params) {
@@ -224,6 +227,7 @@ export class HttpClient implements IHttpClient
                 if (this._tracker.tryAttempt) {
                     this._tracker.tryAttempt(requestInfo);
                 }
+
                 return axios(config);
             })
             .then((result: AxiosResponse<T>) => {

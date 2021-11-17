@@ -134,7 +134,7 @@ describe('backend-client', () => {
             }
         });
         let wasFailed = false;
-        return client.get('/')
+        return client.get('/do-something')
             .catch(reason => {
                 wasFailed = true;
 
@@ -142,6 +142,9 @@ describe('backend-client', () => {
                 should(reason.name).be.equal('HttpClientError');
                 should(reason.message).be.equal('connect ECONNREFUSED 127.0.0.1:111');
                 should(reason.stack).be.String();
+                should(reason.httpUrl).be.equal('http://localhost:111/do-something')
+                should(reason.httpParams).be.eql({ })
+                should(reason.httpMethod).be.equal('GET')
                 should(reason.httpStatusCode).be.undefined();
                 should(reason.httpStatusText).be.undefined();
             })
@@ -159,14 +162,14 @@ describe('backend-client', () => {
     
     it('get-failure-404', () => {
         const tracker = new Tracker();
-        const client = new HttpClient(`http://localhost:${PORT}/missing-url`, {
+        const client = new HttpClient(`http://localhost:${PORT}/v1`, {
             tracker: tracker,
             retry: {
                 initRetryDelay: 100
             }
         });
         let wasFailed = false;
-        return client.get('/')
+        return client.post('/missing-url', { foo: 'bar' })
             .catch((reason : HttpClientError) => {
                 wasFailed = true;
 
@@ -174,6 +177,9 @@ describe('backend-client', () => {
                 should(reason.name).be.equal('HttpClientError');
                 should(reason.message).be.equal('Request failed with status code 404');
                 should(reason.stack).be.String();
+                should(reason.httpUrl).be.equal(`http://localhost:${PORT}/v1/missing-url`)
+                should(reason.httpParams).be.eql({ foo: 'bar' })
+                should(reason.httpMethod).be.equal('POST')
                 should(reason.httpStatusCode).be.equal(404);
                 should(reason.httpStatusText).be.equal('Not Found');
             })

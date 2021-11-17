@@ -57,6 +57,9 @@ export interface IHttpClient
 
 export interface HttpClientError extends Error
 {
+    httpUrl: string;
+    httpMethod: string;
+    httpParams: Record<string, string>;
     httpStatusCode?: number;
     httpStatusText?: string;
 
