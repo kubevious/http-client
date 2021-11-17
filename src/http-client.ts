@@ -26,7 +26,7 @@ export interface HttpClientRetryOptions
     initRetryDelay?: number;
     maxRetryDelay?: number;
     retryDelayCoeff?: number;
-    canContinueCb?: (reason: any, requestInfo : RequestInfo) => Resolvable<boolean>;
+    canContinueCb?: (reason: HttpClientError, requestInfo : RequestInfo) => Resolvable<boolean>;
 }
 
 export class HttpClient implements IHttpClient
@@ -153,7 +153,8 @@ export class HttpClient implements IHttpClient
         if (this._retry.canContinueCb)
         {
             options.canContinueCb = (reason) => {
-                return this._retry.canContinueCb!(reason, requestInfo);
+                const myError = this._makeError(requestInfo, reason);
+                return this._retry.canContinueCb!(myError, requestInfo);
             };
         }
 
@@ -170,11 +171,11 @@ export class HttpClient implements IHttpClient
                 return null;
             })
             .catch(reason => {
+                const myError = this._makeError(requestInfo, reason);
                 if (this._tracker.fail) {
-                    this._tracker.fail(requestInfo, reason);
+                    this._tracker.fail(requestInfo, myError);
                 }
                 if (!this._options.absorbFailures) {
-                    const myError = this._makeError(requestInfo, reason);
                     reject(myError);
                 }
                 return null;
@@ -240,20 +241,16 @@ export class HttpClient implements IHttpClient
             })
             .catch((reason: AxiosError) => {
 
-                let data = reason.message;
-                let status = 0;
-                if (reason.response) {
-                    data = reason.response.data;
-                    status = reason.response.status;
-                }
-                if (status == 401) {
+                const myError = this._makeError(requestInfo, reason);
+
+                if (myError.httpStatusCode === 401) {
                     if (this._authorizerResolver) {
                         this._authorizerResolver.reset();
                     }
                 }
 
                 if (this._tracker.failedAttempt) {
-                    this._tracker.failedAttempt(requestInfo, reason, data, status);
+                    this._tracker.failedAttempt(requestInfo, myError);
                 }
 
                 throw reason;

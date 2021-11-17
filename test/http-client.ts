@@ -265,15 +265,15 @@ class Tracker implements ITracker
         this.startCount++;
     }
 
-    finish(requestInfo : RequestInfo, response: AxiosResponse<any>)
+    finish(requestInfo : RequestInfo, response: AxiosResponse)
     {
         console.log('    [TRACKER::finish] ', requestInfo.method, ' :: ', requestInfo.url);        
         this.finishCount++;
     }
 
-    fail(requestInfo : RequestInfo, reason: any)
+    fail(requestInfo : RequestInfo, reason: HttpClientError)
     {
-        console.error('    [TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ' :: ', reason.message);
+        console.error('    [TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ' :: ', reason.message, ' :: ', reason.httpStatusCode);
         this.failCount++;
     }
 
@@ -283,9 +283,9 @@ class Tracker implements ITracker
         this.tryAttemptCount++;
     }
 
-    failedAttempt(requestInfo : RequestInfo, reason: any, data: any, status: number)
+    failedAttempt(requestInfo : RequestInfo, reason: HttpClientError)
     {
-        console.warn('            [TRACKER::failAttempt] ', requestInfo.method, ' :: ', requestInfo.url , ', status:', status);
+        console.warn('            [TRACKER::failAttempt] ', requestInfo.method, ' :: ', requestInfo.url , ', status:', reason.httpStatusCode);
         this.failedAttemptCount++;
     }
 }
