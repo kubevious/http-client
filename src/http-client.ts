@@ -3,7 +3,7 @@ import { Promise, RetryOptions, BlockingResolver, Resolvable } from 'the-promise
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
-import { IHttpClient, RequestInfo, ClientResponse, HttpMethod } from './types'
+import { IHttpClient, RequestInfo, ClientResponse, HttpMethod, HttpClientError } from './types'
 
 export type AuthorizerCb = () => Resolvable<string>;
 
@@ -64,7 +64,7 @@ export class HttpClient implements IHttpClient
     }
 
     scope(url: string) {
-        let parts = [];
+        const parts = [];
         if (this._urlBase) {
             parts.push(this._urlBase);
         }
@@ -169,11 +169,28 @@ export class HttpClient implements IHttpClient
                     this._tracker.fail(requestInfo, reason);
                 }
                 if (!this._options.absorbFailures) {
-                    reject(reason);
+                    const myError = this._makeError(reason);
+                    reject(myError);
                 }
                 return null;
             })
         })
+    }
+
+    private _makeError(reason: any) : HttpClientError
+    {
+        const axiosError = <AxiosError>reason;
+
+        const myError : HttpClientError = {
+            name: 'HttpClientError',
+            message: axiosError?.message,
+            stack: reason?.stack,
+
+            httpStatusCode: axiosError.response?.status,
+            httpStatusText: axiosError.response?.statusText
+        }
+
+        return myError;
     }
 
     private _executeSingle<T>(requestInfo : RequestInfo)
@@ -185,8 +202,7 @@ export class HttpClient implements IHttpClient
 
         const config: AxiosRequestConfig = {
             method: requestInfo.method,
-            url: url,
-            headers: requestInfo.headers,
+            url: url
         };
 
         if (requestInfo.params) {
@@ -201,8 +217,10 @@ export class HttpClient implements IHttpClient
             config.timeout = this._options.timeout!;
         }
 
-        return this._prepareHeaders(config.headers)
+        const headers = requestInfo.headers;
+        return this._prepareHeaders(headers)
             .then(() => {
+                config.headers = headers;
                 if (this._tracker.tryAttempt) {
                     this._tracker.tryAttempt(requestInfo);
                 }
@@ -216,7 +234,7 @@ export class HttpClient implements IHttpClient
                 
                 return result;
             })
-            .catch((reason: AxiosError<any>) => {
+            .catch((reason: AxiosError) => {
 
                 let data = reason.message;
                 let status = 0;

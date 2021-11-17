@@ -4,12 +4,10 @@ import express from 'express';
 import { Server } from 'http'
 import { Promise } from 'the-promise';
 
-import { HttpClient, ITracker, RequestInfo } from '../src';
-import { AxiosResponse } from 'axios';
-import { HttpMethod } from '../src/types';
+import { HttpClient, ITracker, RequestInfo, HttpClientError, HttpMethod, AxiosResponse } from '../src';
 
 const PORT = process.env.PORT || 3334;
-let globalApp = express();
+const globalApp = express();
 globalApp.use(express.json({ limit: '10mb' }));
 
 let globalHttp : Server | null;
@@ -55,25 +53,25 @@ describe('backend-client', () => {
 
 
     it('constructor', () => {
-        let client = new HttpClient('');
+        const client = new HttpClient('');
         should(client.urlBase).be.equal('');
     });
 
 
     it('construct-scope', () => {
-        let client = new HttpClient('');
+        const client = new HttpClient('');
         should(client.urlBase).be.equal('');
 
-        let subClient = client.scope('abc');
+        const subClient = client.scope('abc');
         should(subClient.urlBase).be.equal('abc');
 
-        let subClient2 = subClient.scope('def');
+        const subClient2 = subClient.scope('def');
         should(subClient2.urlBase).be.equal('abc/def');
     });
 
 
     it('get-query', () => {
-        let client = new HttpClient(`http://localhost:${PORT}`);
+        const client = new HttpClient(`http://localhost:${PORT}`);
         return client.get('/')
             .then(result => {
                 should(result.data).be.equal('hello');
@@ -81,7 +79,7 @@ describe('backend-client', () => {
     })
 
     it('post-no-data', () => {
-        let client = new HttpClient(`http://localhost:${PORT}`);
+        const client = new HttpClient(`http://localhost:${PORT}`);
         return client.post('/data')
             .then(result => {
                 should(result.data).be.equal('none');
@@ -89,7 +87,7 @@ describe('backend-client', () => {
     })
 
     it('post-with-data', () => {
-        let client = new HttpClient(`http://localhost:${PORT}`);
+        const client = new HttpClient(`http://localhost:${PORT}`);
         const contact : Contact = {
             name: 'John',
             phone: '1234'
@@ -102,7 +100,7 @@ describe('backend-client', () => {
 
 
     it('get-query-execute', () => {
-        let client = new HttpClient(`http://localhost:${PORT}`);
+        const client = new HttpClient(`http://localhost:${PORT}`);
         return client.execute(HttpMethod.GET, '/')
             .then(result => {
                 should(result.data).be.equal('hello');
@@ -111,7 +109,7 @@ describe('backend-client', () => {
 
     it('get-query-tracker', () => {
         const tracker = new Tracker();
-        let client = new HttpClient(`http://localhost:${PORT}`, {
+        const client = new HttpClient(`http://localhost:${PORT}`, {
             tracker: tracker
         });
         return client.get('/')
@@ -126,10 +124,10 @@ describe('backend-client', () => {
                 should(tracker.failCount).be.equal(0);
             });
     })
-
-    it('get-failure', () => {
+ 
+    it('get-failure-connection-error', () => {
         const tracker = new Tracker();
-        let client = new HttpClient(`http://localhost:111`, {
+        const client = new HttpClient(`http://localhost:111`, {
             tracker: tracker,
             retry: {
                 initRetryDelay: 100
@@ -139,6 +137,45 @@ describe('backend-client', () => {
         return client.get('/')
             .catch(reason => {
                 wasFailed = true;
+
+                should(reason).be.ok();
+                should(reason.name).be.equal('HttpClientError');
+                should(reason.message).be.equal('connect ECONNREFUSED 127.0.0.1:111');
+                should(reason.stack).be.String();
+                should(reason.httpStatusCode).be.undefined();
+                should(reason.httpStatusText).be.undefined();
+            })
+            .then(() => {
+                should(wasFailed).be.true();
+                should(tracker.startCount).be.equal(1);
+                should(tracker.finishCount).be.equal(0);
+                should(tracker.tryAttemptCount).be.equal(4);
+                should(tracker.failedAttemptCount).be.equal(4);
+                should(tracker.failCount).be.equal(1);
+            });
+    })
+    .timeout(30 * 1000);
+     
+    
+    it('get-failure-404', () => {
+        const tracker = new Tracker();
+        const client = new HttpClient(`http://localhost:${PORT}/missing-url`, {
+            tracker: tracker,
+            retry: {
+                initRetryDelay: 100
+            }
+        });
+        let wasFailed = false;
+        return client.get('/')
+            .catch((reason : HttpClientError) => {
+                wasFailed = true;
+
+                should(reason).be.ok();
+                should(reason.name).be.equal('HttpClientError');
+                should(reason.message).be.equal('Request failed with status code 404');
+                should(reason.stack).be.String();
+                should(reason.httpStatusCode).be.equal(404);
+                should(reason.httpStatusText).be.equal('Not Found');
             })
             .then(() => {
                 should(wasFailed).be.true();
@@ -153,10 +190,10 @@ describe('backend-client', () => {
 
     it('get-query-scope', () => {
         const tracker = new Tracker();
-        let client = new HttpClient(`http://localhost:${PORT}`, {
+        const client = new HttpClient(`http://localhost:${PORT}`, {
             tracker: tracker
         });
-        let scopeClient = client.scope('foo');
+        const scopeClient = client.scope('foo');
         return scopeClient.get('/bar')
             .then(result => {
                 should(result.data).be.equal('bar1');
@@ -173,7 +210,7 @@ describe('backend-client', () => {
 
     it('failure-absorb', () => {
         const tracker = new Tracker();
-        let client = new HttpClient(`http://localhost:111`, {
+        const client = new HttpClient(`http://localhost:111`, {
             tracker: tracker,
             absorbFailures: true,
             retry: {
@@ -210,39 +247,39 @@ describe('backend-client', () => {
 
 class Tracker implements ITracker
 {
-    public startCount: number = 0;
-    public finishCount: number = 0;
-    public failCount: number = 0;
-    public tryAttemptCount: number = 0;
-    public failedAttemptCount: number = 0;
+    public startCount = 0;
+    public finishCount = 0;
+    public failCount = 0;
+    public tryAttemptCount = 0;
+    public failedAttemptCount = 0;
 
     start(requestInfo : RequestInfo)
     {
-        console.log('[TRACKER::start] ', requestInfo.method, ' :: ', requestInfo.url);
+        console.log('    [TRACKER::start] ', requestInfo.method, ' :: ', requestInfo.url);
         this.startCount++;
     }
 
     finish(requestInfo : RequestInfo, response: AxiosResponse<any>)
     {
-        console.log('[TRACKER::finish] ', requestInfo.method, ' :: ', requestInfo.url);        
+        console.log('    [TRACKER::finish] ', requestInfo.method, ' :: ', requestInfo.url);        
         this.finishCount++;
     }
 
     fail(requestInfo : RequestInfo, reason: any)
     {
-        console.error('[TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ' :: ', reason.message);
+        console.error('    [TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ' :: ', reason.message);
         this.failCount++;
     }
 
     tryAttempt(requestInfo : RequestInfo)
     {
-        console.info('[TRACKER::tryAttempt] ', requestInfo.method, ' :: ', requestInfo.url);
+        console.info('        [TRACKER::tryAttempt] ', requestInfo.method, ' :: ', requestInfo.url);
         this.tryAttemptCount++;
     }
 
     failedAttempt(requestInfo : RequestInfo, reason: any, data: any, status: number)
     {
-        console.warn('[TRACKER::fail] ', requestInfo.method, ' :: ', requestInfo.url , ', status:', status);
+        console.warn('            [TRACKER::failAttempt] ', requestInfo.method, ' :: ', requestInfo.url , ', status:', status);
         this.failedAttemptCount++;
     }
 }

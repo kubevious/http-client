@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig, AxiosError } from 'axios';
 
 export enum HttpMethod
 {
@@ -53,4 +53,12 @@ export interface IHttpClient
         data?: TBody | null,
         ) : Promise<ClientResponse<TResponse>>;
     
+}
+
+export interface HttpClientError extends Error
+{
+    httpStatusCode?: number;
+    httpStatusText?: string;
+
+    sourceError?: AxiosError; 
 }
