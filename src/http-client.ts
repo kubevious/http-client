@@ -109,6 +109,12 @@ export class HttpClient implements IHttpClient
         return this.execute<TResponse, TParams, TBody>(HttpMethod.POST, url, params, data);
     }
 
+    patch<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
+    (url: string, params?: TParams, data?: TBody)
+    {
+        return this.execute<TResponse, TParams, TBody>(HttpMethod.PATCH, url, params, data);
+    }
+
     put<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>
     (url: string, params?: TParams, data?: TBody)
     {
