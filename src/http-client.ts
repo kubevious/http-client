@@ -1,5 +1,5 @@
 import _ from 'the-lodash';
-import { Promise, RetryOptions, BlockingResolver, Resolvable } from 'the-promise';
+import { MyPromise, RetryOptions, BlockingResolver, Resolvable } from 'the-promise';
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
@@ -127,7 +127,7 @@ export class HttpClient implements IHttpClient
         return this.execute<TResponse, TParams, TBody>(HttpMethod.OPTIONS, url, params, data);
     }
 
-    execute<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>(
+    async execute<TResponse = any, TParams = Record<string, string>, TBody = Record<string, any> | null>(
         method: HttpMethod,
         url: string,
         params?: TParams,
@@ -144,7 +144,7 @@ export class HttpClient implements IHttpClient
             method: method,
             url: finalUrl,
             params: params,
-            data: data,
+            data: data as any,
             headers: this._headers ? _.clone(this._headers) : {}
         }
 
@@ -158,9 +158,9 @@ export class HttpClient implements IHttpClient
 
         if (this._retry.canContinueCb)
         {
-            options.canContinueCb = (reason) => {
+            options.canContinueCb = async (reason) => {
                 const myError = this._makeError(requestInfo, reason);
-                return this._retry.canContinueCb!(myError, requestInfo);
+                return await this._retry.canContinueCb!(myError, requestInfo);
             };
         }
 
@@ -168,15 +168,17 @@ export class HttpClient implements IHttpClient
             this._tracker.start(requestInfo);
         }
 
-        return Promise.construct((resolve, reject) => {
-            Promise.retry<ClientResponse<TResponse>>(() => {
-                return this._executeSingle(requestInfo);
-            }, options)
-            .then(result => {
+        return MyPromise.construct(async (resolve, reject) => {
+
+            try
+            {
+                const result : ClientResponse<TResponse> = await MyPromise.retry(() => {
+                    return this._executeSingle(requestInfo);
+                }, options);
                 resolve(result);
-                return null;
-            })
-            .catch(reason => {
+            }
+            catch(reason)
+            {
                 const myError = this._makeError(requestInfo, reason);
                 if (this._tracker.fail) {
                     this._tracker.fail(requestInfo, myError);
@@ -184,9 +186,11 @@ export class HttpClient implements IHttpClient
                 if (!this._options.absorbFailures) {
                     reject(myError);
                 }
-                return null;
-            })
-        })
+            }
+            return null;
+        });
+
+        
     }
 
     private _makeError(requestInfo : RequestInfo, reason: any) : HttpClientError

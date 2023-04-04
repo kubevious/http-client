@@ -1,8 +1,8 @@
 import 'mocha';
-import should = require('should');
+import should from 'should';
 import express from 'express';
 import { Server } from 'http'
-import { Promise } from 'the-promise';
+import { MyPromise } from 'the-promise';
 
 import { HttpClient, ITracker, RequestInfo, HttpClientError, HttpMethod, AxiosResponse } from '../src';
 
@@ -37,7 +37,7 @@ globalApp.post("/data", (req, res) => {
 describe('backend-client', () => {
 
     beforeEach(() => {
-        return Promise.construct((resolve, reject) => {
+        return MyPromise.construct<void>((resolve, reject) => {
             globalHttp = globalApp.listen(PORT, () => {
                 console.log("Listening on: ", PORT);
                 resolve();
@@ -237,7 +237,7 @@ describe('backend-client', () => {
                 return null; 
             });
 
-        return Promise.timeout(3 * 1000)
+        return MyPromise.delay(3 * 1000)
             .then(() => {
                 should(wasFailed).be.false();
                 should(wasPassed).be.false();
