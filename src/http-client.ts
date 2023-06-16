@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ITracker } from './tracker';
 import { IHttpClient, RequestInfo, ClientResponse, HttpMethod, HttpClientError } from './types'
 
+
 export type AuthorizerCb = () => Resolvable<string>;
 
 export interface HttpClientOptions
