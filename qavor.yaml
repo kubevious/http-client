@@ -1,0 +1,3 @@
+kind: service
+name: http-client
+description: http-client
